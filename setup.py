@@ -1,47 +1,56 @@
 from vosk import Model, KaldiRecognizer
 import sounddevice as sd
-import keyboard
 import queue
 import json
+import keyboard
 
 q = queue.Queue()
 
 # modelo
-model = Model("vosk-model-small-pt-0.3")
+model = Model(r'C:\Users\User\Desktop\marcadorjogo\vosk-model-small-pt-0.3')
 
-# reconhecimento
-rec = KaldiRecognizer(model, 16000)
+# comandos permitidos
+comandos = [
+    "aqui",
+    "[unk]"
+]
+
+grammar = json.dumps(comandos)
+
+# reconhecedor
+rec = KaldiRecognizer(model, 16000, grammar)
 
 def callback(indata, frames, time, status):
     q.put(bytes(indata))
 
-# microfone contínuo
 with sd.RawInputStream(
     samplerate=16000,
-    blocksize=8000,
+    blocksize=2000,
     dtype='int16',
     channels=1,
     callback=callback
 ):
 
-    print("Ouvindo...")
+    print("Fale 'aqui'...")
 
     while True:
+
         data = q.get()
 
         if rec.AcceptWaveform(data):
+
             result = json.loads(rec.Result())
 
-            texto = result.get("text", "").lower()
+            texto = result.get("text", "")
 
-            print("Você disse:", texto)
+            if texto:
 
-            # comandos
-            if "pular" in texto:
-                keyboard.press_and_release("space")
+                print("Comando:", texto)
 
-            elif "atacar" in texto:
-                keyboard.press_and_release("f")
+                # se falar "aqui"
+                if texto == "aqui":
 
-            elif "cura" in texto:
-                keyboard.press_and_release("1")
+                    print("Tecla Z pressionada")
+
+                    # aperta a tecla Z
+                    keyboard.press_and_release("z")
